@@ -21,6 +21,7 @@ This template accepts the following parameters:
 - bootloader-append: string (default="nofb quiet splash=quiet")
 - disable-firewall: boolean (default=false)
 - package_upgrade: boolean (default=true)
+- repo-mirror: string (default="")
 %>
 <%
   os_major = @host.operatingsystem.major.to_i
@@ -68,15 +69,19 @@ realm join --one-time-password='<%= @host.otp || "$HOST[OTP]" %>' <%= @host.real
 
 <% if os_major > 4 -%>
 <% unless @host.param_false?('enable-epel') -%>
+<% if @host.params['repo-mirror'] %>
+repo --name="EPEL" --mirrorlist=<%= @host.params['repo-mirror'] %>/pub/epel/<%= @host.operatingsystem.major %>/<%= @host.architecture %><%= proxy_string %>
+<% else -%>
 repo --name="EPEL" --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-<%= @host.operatingsystem.major %>&arch=<%= @host.architecture %><%= proxy_string %>
+<% end -%>
 <% end -%>
 <% if puppet_enabled -%>
 <% if @host.param_true?('enable-puppetlabs-repo') -%>
-repo --name=puppetlabs-products --baseurl=http://yum.puppetlabs.com/el/<%= @host.operatingsystem.major %>/products/<%= @host.architecture %><%= proxy_string %>
-repo --name=puppetlabs-deps --baseurl=http://yum.puppetlabs.com/el/<%= @host.operatingsystem.major %>/dependencies/<%= @host.architecture %><%= proxy_string %>
+repo --name=puppetlabs-products --baseurl=<%= @host.params['repo-mirror'] || 'http://yum.puppetlabs.com' %>/el/<%= @host.operatingsystem.major %>/products/<%= @host.architecture %><%= proxy_string %>
+repo --name=puppetlabs-deps --baseurl=<%= @host.params['repo-mirror'] || 'http://yum.puppetlabs.com' %>/el/<%= @host.operatingsystem.major %>/dependencies/<%= @host.architecture %><%= proxy_string %>
 <% end -%>
 <% if @host.param_true?('enable-puppetlabs-pc1-repo') -%>
-repo --name=puppetlabs-pc1 --baseurl=http://yum.puppetlabs.com/el/<%= @host.operatingsystem.major %>/PC1/<%= @host.architecture %><%= proxy_string %>
+repo --name=puppetlabs-pc1 --baseurl=<%= @host.params['repo-mirror'] || 'http://yum.puppetlabs.com' %>/el/<%= @host.operatingsystem.major %>/PC1/<%= @host.architecture %><%= proxy_string %>
 <% end -%>
 <% end -%>
 <% end -%>
